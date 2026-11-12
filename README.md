@@ -2,7 +2,7 @@
 
 Group project (Group 1) for **NMC5344 Coding for Communicators**, National University of Singapore.
 
-📄 **[Read the final report (PDF)](report/Final_Group_Report.pdf)**
+📄 **[Read the final report (PDF)](Final_Group_Report.pdf)**
 
 ---
 
