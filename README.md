@@ -3,6 +3,7 @@
 Group project (Group 1) for **NMC5344 Coding for Communicators**, National University of Singapore.
 
 📄 **[Read the final report (PDF)](Final_Group_Report.pdf)**
+💻 **[View the code and data on GitHub](https://github.com/treetripcomnaomi/Understanding-Singapore-s-HDB-Resale-Price-Transformation-2017-2025-)**
 
 ---
 
