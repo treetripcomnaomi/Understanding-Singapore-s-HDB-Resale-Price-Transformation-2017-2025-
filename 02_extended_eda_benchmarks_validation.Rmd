@@ -1,0 +1,1252 @@
+---
+title: "NMC5344 HDB Project — Part 2: Extended EDA, External Benchmarks and Validation"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup-opts, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5.6)
+```
+
+# NMC5344 HDB Project — Part 2: Extended EDA, External Benchmarks and Validation Models
+
+This notebook continues from our main notebook (import → clean → feature engineering). It adds three blocks:
+
+| Block | What it does | Where it goes |
+|---|---|---|
+| **A. Extended EDA (E1–E7)** | Tests the two halves of our story: is the price rise *broad*, and is the $1m segment *concentrated*? | Preliminary presentation |
+| **B. External benchmarks (X1–X5)** | Compares our data with HDB's official Resale Price Index, media-reported $1m counts, the policy timeline, inflation (CPI) and household income | Preliminary presentation (X1, X2) and final report |
+| **C. Validation models (V1–V3)** | Formally tests the working hypothesis with a log-price regression, a logistic regression and a counterfactual "threshold" simulation | Final report |
+
+**Working hypothesis (threshold effect).** The whole resale price distribution has shifted upwards. Because $1m is a *fixed nominal line*, a broad shift pushes more and more flats across it, so the count grows much faster than prices do. *Which* flats cross depends on segment: size, storey, age and town.
+
+## 0. Setup and data preparation
+
+These are the same cleaning and feature-engineering rules as the main notebook, so every chart below uses identical definitions. One difference: we keep the 2026 records in `hdb_all`. The main analysis (`hdb`) stays at **Jan 2017–Dec 2025**, because full calendar years keep annual comparisons fair and 2025 serves as our hold-out test year. The 2026 records are used only as an out-of-sample check (E7, X2).
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(scales)
+
+csv_path <- "../data/HDB Resale Flat Prices.csv"   # path relative to this file
+
+hdb_all <- read_csv(csv_path, show_col_types = FALSE) %>%
+  mutate(
+    transaction_date = as.Date(paste0(month, "-01")),
+    year = year(transaction_date),
+    flat_age = year - lease_commence_date,
+    storey_lower = as.numeric(str_extract(storey_range, "^[0-9]+")),
+    storey_upper = as.numeric(str_extract(storey_range, "[0-9]+$")),
+    storey_midpoint = (storey_lower + storey_upper) / 2,
+    floor_band = case_when(
+      storey_midpoint <= 6 ~ "Low",
+      storey_midpoint <= 12 ~ "Middle",
+      TRUE ~ "High"
+    ),
+    price_psm = resale_price / floor_area_sqm,
+    price_band = case_when(
+      resale_price >= 1e6 ~ "$1m+",
+      resale_price >= 8e5 ~ "$800k-$999k",
+      resale_price >= 5e5 ~ "$500k-$799k",
+      TRUE ~ "Below $500k"
+    ),
+    million_dollar_flag = resale_price >= 1e6
+  )
+
+hdb <- hdb_all %>% filter(year >= 2017, year <= 2025)
+
+nrow(hdb_all); nrow(hdb)
+
+# Shared chart style: deck blue; orange marks the $1m "headline" segment
+col_main   <- "#2F5D87"
+col_accent <- "#D9822B"
+col_grey   <- "#9AA5B1"
+
+theme_deck <- theme_minimal(base_size = 11) +
+  theme(
+    plot.title = element_text(size = 14),
+    plot.subtitle = element_text(colour = "grey35"),
+    plot.caption = element_text(colour = "grey45", hjust = 0),
+    panel.grid.minor = element_blank(),
+    legend.position = "top"
+  )
+
+# Saves a 16:9 PNG for the slides
+save_slide <- function(p, file) {
+  ggsave(file, p, width = 10, height = 5.6, dpi = 200, bg = "white")
+}
+```
+
+### Why the floor-band cut-offs are 6 and 12
+
+`storey_range` is text (for example "10 TO 12"), so we convert it to a numeric midpoint. The cut-offs below split transactions roughly **40% / 40% / 20%**, so "High" means the top fifth of storeys (13th floor and above).
+
+```{r}
+hdb %>% count(floor_band) %>% mutate(share = percent(n / sum(n), accuracy = 0.1))
+```
+
+***
+# A. Extended EDA: is the rise broad, and is $1m concentrated?
+
+Our earlier charts showed that $1m deals are rising (share of transactions) and that towns differ (heatmap). Neither chart shows **whether the whole market moved** or **who crosses the $1m line**. E1–E3 test the "broad" half; E4–E6 test the "concentrated" half; E7 previews the test case for the final report.
+
+## E1. The whole price distribution moved up
+
+**How.** `price_band` (engineered with `case_when()`) puts every transaction into one of four bands. `count(year, price_band)`, then `group_by(year)` and `mutate(share = n / sum(n))`, give each band's share of that year's deals. `geom_area()` stacks the shares to 100%.
+
+**Why.** A rising $1m share could happen in two ways: only the top end moves, or the whole distribution moves. A 100% stacked area shows all bands at once. If only the top moved, the bottom band would stay put.
+
+**Reading.** Deals below $500k fell from **73% (2017) to 23% (2025)**. The middle band ($500k–$799k) is now the typical transaction, and the $1m slice (orange) appears only from 2021.
+
+```{r}
+band_share <- hdb %>%
+  count(year, price_band) %>%
+  group_by(year) %>%
+  mutate(share = n / sum(n)) %>%
+  ungroup() %>%
+  mutate(price_band = factor(price_band,
+    levels = c("$1m+", "$800k-$999k", "$500k-$799k", "Below $500k")))
+
+band_share %>% filter(year %in% c(2017, 2025)) %>%
+  select(year, price_band, share) %>%
+  pivot_wider(names_from = year, values_from = share)
+
+e1 <- ggplot(band_share, aes(year, share, fill = price_band)) +
+  geom_area(colour = "white", linewidth = 0.6) +
+  scale_fill_manual(values = c(
+    "$1m+" = col_accent, "$800k-$999k" = "#5C86AD",
+    "$500k-$799k" = "#9DB7CF", "Below $500k" = "#D6E1EB")) +
+  scale_x_continuous(breaks = 2017:2025) +
+  scale_y_continuous(labels = label_percent()) +
+  annotate("text", x = 2017.2, y = 0.35, hjust = 0, size = 4.2,
+           label = "Below $500k\n73% of deals in 2017") +
+  annotate("text", x = 2024.8, y = 0.12, hjust = 1, size = 4.2,
+           label = "23% in 2025") +
+  labs(
+    title = "The whole resale market moved up a price band",
+    subtitle = "Share of HDB resale transactions by price band, 2017-2025",
+    x = NULL, y = "Share of transactions", fill = NULL,
+    caption = "Source: HDB resale transactions, data.gov.sg (n = 222,066). Nominal prices."
+  ) +
+  theme_deck
+save_slide(e1, "E1_price_band_shift.png")
+e1
+```
+
+## E2. Cheaper and premium flats rose at almost the same pace
+
+**How.** We restrict to 4-room flats (43% of 2025 deals), so the mix of flat types stays constant over time. For each year, `quantile()` gives the 10th percentile, median and 90th percentile of `price_psm`. Each series is divided by its own 2017 value and multiplied by 100 (an **index**, 2017 = 100), so we compare *growth rates* rather than dollar levels.
+
+**Why.** If $1m deals were driven by the premium end pulling away, the 90th percentile would rise much faster than the 10th. Price per sqm removes the effect of flat size.
+
+**Reading.** All three end around **155–160**, a rise of about 55%. The cheaper end actually grew slightly *faster*. The rise was broad, not top-driven.
+
+```{r}
+pct_index <- hdb %>%
+  filter(flat_type == "4 ROOM") %>%
+  group_by(year) %>%
+  summarise(
+    `10th percentile (cheaper flats)` = quantile(price_psm, 0.10),
+    `Median` = median(price_psm),
+    `90th percentile (premium flats)` = quantile(price_psm, 0.90),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(-year, names_to = "measure", values_to = "psm") %>%
+  group_by(measure) %>%
+  mutate(index = psm / psm[year == 2017] * 100) %>%
+  ungroup()
+
+pct_index %>% filter(year == 2025)
+
+e2 <- ggplot(pct_index, aes(year, index, colour = measure)) +
+  geom_hline(yintercept = 100, colour = "grey70") +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2.2) +
+  geom_text(data = filter(pct_index, year == 2025) %>%
+              mutate(label_y = index + case_when(
+                str_detect(measure, "90th") ~ -2.5,
+                str_detect(measure, "Median") ~ 1.5,
+                TRUE ~ 0)),
+            aes(y = label_y, label = round(index)), hjust = -0.4, size = 3.8,
+            show.legend = FALSE) +
+  scale_colour_manual(values = c(
+    "10th percentile (cheaper flats)" = col_grey,
+    "Median" = col_main,
+    "90th percentile (premium flats)" = col_accent)) +
+  scale_x_continuous(breaks = 2017:2025, expand = expansion(add = c(0.2, 0.6))) +
+  labs(
+    title = "Cheaper and premium 4-room flats rose at almost the same pace",
+    subtitle = "4-room price per sqm, indexed to 2017 = 100",
+    x = NULL, y = "Index (2017 = 100)", colour = NULL,
+    caption = "Source: HDB resale transactions, data.gov.sg."
+  ) +
+  theme_deck
+save_slide(e2, "E2_percentile_index.png")
+e2
+```
+
+## E3. External check: our medians vs HDB's official Resale Price Index (RPI)
+
+**What the RPI is.** HDB's official quarterly index (base 1Q2009 = 100). It is *stratified*: it adjusts for the changing mix of flats sold (town, flat type, age and so on), so it is a "quality-adjusted" price trend. Our simple medians are not adjusted. If our medians tracked the RPI badly, a changing mix of flats sold could be distorting our charts.
+
+**How we brought the RPI in.** The quarterly values were typed from HDB's published RPI table (1Q2017–4Q2025), into a small table with `tribble()`. *(Alternative: download "HDB Resale Price Index (1Q2009 = 100), Quarterly" from data.gov.sg and `read_csv()` it. Same numbers.)* Because our data is analysed by year, we take the **annual average of the four quarters**. Then we **re-index everything to 2017 = 100**, so the RPI (base 2009) and our medians (in dollars) sit on one common scale. Re-indexing changes the starting point, not the growth.
+
+**Reading.** RPI +52%, our all-flat median price +53%, our 4-room median PSM +56%. Our measures are reliable proxies for the official trend. The RPI lags slightly in 2020–21 because it is quality-adjusted and quarterly-averaged.
+
+```{r}
+rpi_quarterly <- tribble(
+  ~year, ~q1,   ~q2,   ~q3,   ~q4,
+  2017, 133.9, 133.7, 132.8, 132.6,
+  2018, 131.6, 131.7, 131.6, 131.4,
+  2019, 131.0, 130.8, 130.9, 131.5,
+  2020, 131.5, 131.9, 133.9, 138.1,
+  2021, 142.2, 146.4, 150.6, 155.7,
+  2022, 159.5, 163.9, 168.1, 171.9,
+  2023, 173.6, 176.2, 178.5, 180.4,
+  2024, 183.7, 187.9, 192.9, 197.9,
+  2025, 201.0, 202.9, 203.7, 203.6
+)
+# Source: HDB, "Resale Price Index (1Q2009 = 100)" table, hdb.gov.sg
+
+rpi <- rpi_quarterly %>%
+  mutate(value = (q1 + q2 + q3 + q4) / 4) %>%          # annual average
+  transmute(year, series = "HDB Resale Price Index (official)",
+            index = value / value[year == 2017] * 100)  # re-index 2017 = 100
+
+ours <- hdb %>%
+  group_by(year) %>%
+  summarise(
+    `Our data: median resale price (all flats)` = median(resale_price),
+    `Our data: median price per sqm (4-room)` =
+      median(price_psm[flat_type == "4 ROOM"]),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(-year, names_to = "series", values_to = "v") %>%
+  group_by(series) %>%
+  mutate(index = v / v[year == 2017] * 100) %>%
+  ungroup() %>%
+  select(year, series, index)
+
+bench <- bind_rows(ours, rpi)
+bench %>% filter(year == 2025)
+
+e3 <- ggplot(bench, aes(year, index, colour = series, linetype = series)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2) +
+  scale_colour_manual(values = c(
+    "HDB Resale Price Index (official)" = "black",
+    "Our data: median resale price (all flats)" = col_main,
+    "Our data: median price per sqm (4-room)" = col_accent)) +
+  scale_linetype_manual(values = c(
+    "HDB Resale Price Index (official)" = "dashed",
+    "Our data: median resale price (all flats)" = "solid",
+    "Our data: median price per sqm (4-room)" = "solid")) +
+  scale_x_continuous(breaks = 2017:2025) +
+  guides(colour = guide_legend(ncol = 1), linetype = guide_legend(ncol = 1)) +
+  labs(
+    title = "Our simple medians track HDB's official index closely",
+    subtitle = "All three series indexed to 2017 = 100; all up about 50% by 2025",
+    x = NULL, y = "Index (2017 = 100)", colour = NULL, linetype = NULL,
+    caption = "Sources: HDB resale transactions (data.gov.sg); HDB Resale Price Index table (annual average of quarters)."
+  ) +
+  theme_deck +
+  theme(legend.position = "right")
+save_slide(e3, "E3_benchmark_vs_RPI.png")
+e3
+```
+
+## E4. Who crosses $1m? Concentration by town (2025)
+
+**How.** For 2025, `group_by(town)` counts all deals and $1m deals (`sum(million_dollar_flag)`). We then compute each town's share of *all* deals and its share of *$1m* deals. `slice_max()` keeps the 8 towns with the most $1m deals, and side-by-side bars compare the two shares.
+
+**Why.** If $1m deals were spread like the market, each town's two bars would be about equal. A town with a much longer orange bar is *over-represented* in the $1m segment.
+
+**Reading.** Toa Payoh, Bukit Merah, Queenstown, Kallang/Whampoa and Clementi account for **59% of $1m deals but only 16% of all deals**. Tampines, the busiest town (8% of deals), has only 4% of $1m deals: market activity is not the same as price level.
+
+```{r}
+y25 <- hdb %>% filter(year == 2025)
+
+town_conc_all <- y25 %>%
+  group_by(town) %>%
+  summarise(all = n(), million = sum(million_dollar_flag), .groups = "drop") %>%
+  mutate(share_all = all / sum(all), share_million = million / sum(million)) %>%
+  arrange(desc(share_million))
+
+town_conc_all %>% slice(1:5) %>%
+  summarise(top5_share_of_million = sum(share_million),
+            top5_share_of_all = sum(share_all))
+
+town_conc <- town_conc_all %>%
+  slice_max(share_million, n = 8) %>%
+  transmute(town,
+            `Share of all resale deals` = share_all,
+            `Share of $1m+ deals` = share_million) %>%
+  pivot_longer(-town, names_to = "measure", values_to = "share") %>%
+  mutate(town = fct_reorder(town, share, .fun = max),
+         measure = factor(measure,
+           levels = c("Share of all resale deals", "Share of $1m+ deals")))
+
+e4 <- ggplot(town_conc, aes(share, town, fill = measure)) +
+  geom_col(position = position_dodge(width = 0.75), width = 0.7) +
+  geom_text(aes(label = percent(share, accuracy = 1)),
+            position = position_dodge(width = 0.75), hjust = -0.15, size = 3.5) +
+  scale_fill_manual(values = c("Share of all resale deals" = col_grey,
+                               "Share of $1m+ deals" = col_accent)) +
+  scale_x_continuous(labels = label_percent(),
+                     expand = expansion(mult = c(0, 0.12))) +
+  labs(
+    title = "Five towns hold 59% of $1m deals but only 16% of all deals",
+    subtitle = "Top 8 towns by share of million-dollar transactions, 2025",
+    x = NULL, y = NULL, fill = NULL,
+    caption = "Source: HDB resale transactions, data.gov.sg (2025: 25,084 deals, 1,593 at $1m+)."
+  ) +
+  theme_deck
+save_slide(e4, "E4_town_concentration.png")
+e4
+```
+
+## E5. What does a $1m flat look like?
+
+**How.** We stack two copies of the 2025 data with `bind_rows()`: every deal labelled "All resale flats", plus the $1m subset labelled "$1m+ flats". One `summarise()` then computes four profile measures for each group. `facet_wrap(scales = "free_y")` gives each measure its own axis.
+
+**Why.** It describes the $1m segment using the variables we engineered (`flat_age`, `floor_band`) plus floor area and flat type. These are the same variables the logistic model (V2) will later test formally.
+
+**Reading.** Compared with a typical resale flat, $1m flats are twice as likely to be 5-room or Executive (58% vs 29%), much more likely to be on a high floor (54% vs 20%), about half as old (14 vs 27 years) and bigger (111 vs 93 sqm).
+
+```{r}
+profile <- bind_rows(
+    y25 %>% mutate(group = "All resale flats"),
+    y25 %>% filter(million_dollar_flag) %>% mutate(group = "$1m+ flats")
+  ) %>%
+  group_by(group) %>%
+  summarise(
+    `5-room / Executive (%)` = mean(flat_type %in% c("5 ROOM", "EXECUTIVE")) * 100,
+    `High floor, 13th+ (%)` = mean(floor_band == "High") * 100,
+    `Median flat age (years)` = median(flat_age),
+    `Median floor area (sqm)` = median(floor_area_sqm),
+    .groups = "drop"
+  )
+profile
+
+e5 <- profile %>%
+  pivot_longer(-group, names_to = "metric", values_to = "value") %>%
+  mutate(group = factor(group, levels = c("All resale flats", "$1m+ flats"))) %>%
+  ggplot(aes(group, value, fill = group)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = round(value)), vjust = -0.4, size = 4) +
+  facet_wrap(~ metric, nrow = 1, scales = "free_y") +
+  scale_fill_manual(values = c("All resale flats" = col_grey,
+                               "$1m+ flats" = col_accent)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
+  labs(
+    title = "Million-dollar flats are bigger, higher and much newer",
+    subtitle = "Profile of $1m+ transactions vs all resale transactions, 2025",
+    x = NULL, y = NULL, fill = NULL,
+    caption = "Source: HDB resale transactions, data.gov.sg."
+  ) +
+  theme_deck +
+  theme(axis.text.x = element_blank(), panel.grid.major.x = element_blank(),
+        strip.text = element_text())
+save_slide(e5, "E5_million_profile.png")
+e5
+```
+
+## E6. ...but the $1m segment is spreading geographically
+
+**How.** Filter to $1m deals, then `group_by(year)` with `n_distinct(town)` (how many towns had at least one) and `n()` (how many deals).
+
+**Why.** E4 shows concentration at one point in time. This chart adds the time dimension: is the segment getting *more* or *less* concentrated?
+
+**Reading.** From 8 towns (2017) to 23 of 26 towns (2025), with the jump in 2022. The segment is concentrated (E4) but no longer exclusive to a few central estates. This is consistent with a broad shift pushing flats over the line in more places.
+
+```{r}
+spread <- hdb %>%
+  filter(million_dollar_flag) %>%
+  group_by(year) %>%
+  summarise(towns = n_distinct(town), deals = n(), .groups = "drop")
+spread
+
+e6 <- ggplot(spread, aes(factor(year), towns)) +
+  geom_col(fill = col_main, width = 0.65) +
+  geom_text(aes(label = paste0(towns, " towns\n(", comma(deals), " deals)")),
+            vjust = -0.3, size = 3.3, lineheight = 0.9) +
+  scale_y_continuous(limits = c(0, 28), breaks = c(0, 10, 20, 26)) +
+  labs(
+    title = "From 8 towns to 23: the $1m club is spreading",
+    subtitle = "Number of HDB towns (of 26) with at least one $1m+ resale deal",
+    x = NULL, y = "Towns",
+    caption = "Source: HDB resale transactions, data.gov.sg."
+  ) +
+  theme_deck
+save_slide(e6, "E6_town_spread.png")
+e6
+```
+
+## E7. Teaser for the final report: 2026 prices flatten, $1m count does not
+
+**How.** Panel A counts $1m deals per month from `hdb_all` (Jan 2023–Sep 2026; Oct 2026 is incomplete and excluded). Panel B plots the quarterly RPI from HDB's table, each point placed mid-quarter; 3Q2026 is HDB's flash estimate. The panels share the time axis but have **separate y-axes** (`facet_wrap(scales = "free_y")`), because a count and an index cannot share one scale.
+
+**Why.** It is a natural experiment for our hypothesis. If $1m deals simply followed prices, they should stall when the index stalls. They kept rising in 2026 (record 201 in August, 208 in September) while the RPI dipped for three quarters. This suggests a composition or threshold story (which flats are being sold) rather than a pure price-growth story. We will test it in the final report.
+
+```{r}
+monthly_m <- hdb_all %>%
+  filter(transaction_date >= as.Date("2023-01-01"),
+         transaction_date <= as.Date("2026-09-01")) %>%
+  group_by(transaction_date) %>%
+  summarise(value = sum(million_dollar_flag), .groups = "drop") %>%
+  mutate(panel = "A. Million-dollar resale deals per month (our data)")
+
+rpi_q <- tribble(
+  ~transaction_date, ~value,
+  "2023-02-15", 173.6, "2023-05-15", 176.2, "2023-08-15", 178.5, "2023-11-15", 180.4,
+  "2024-02-15", 183.7, "2024-05-15", 187.9, "2024-08-15", 192.9, "2024-11-15", 197.9,
+  "2025-02-15", 201.0, "2025-05-15", 202.9, "2025-08-15", 203.7, "2025-11-15", 203.6,
+  "2026-02-15", 203.4, "2026-05-15", 202.8, "2026-08-15", 202.4
+) %>%
+  mutate(transaction_date = as.Date(transaction_date),
+         panel = "B. HDB Resale Price Index (official, quarterly; 3Q2026 = flash)")
+
+e7 <- ggplot() +
+  geom_col(data = monthly_m, aes(transaction_date, value),
+           fill = col_accent, width = 25) +
+  geom_line(data = rpi_q, aes(transaction_date, value),
+            colour = "black", linewidth = 1) +
+  geom_point(data = rpi_q, aes(transaction_date, value), size = 1.8) +
+  geom_vline(xintercept = as.Date("2026-01-01"), linetype = "dotted") +
+  facet_wrap(~ panel, ncol = 1, scales = "free_y") +
+  scale_x_date(date_breaks = "6 months", date_labels = "%b %Y") +
+  labs(
+    title = "2026: the index has stopped rising, but $1m deals keep hitting records",
+    subtitle = "Right of the dotted line = Jan-Sep 2026, outside our 2017-2025 study window",
+    x = NULL, y = NULL,
+    caption = "Sources: HDB resale transactions (data.gov.sg); HDB Resale Price Index table."
+  ) +
+  theme_deck +
+  theme(strip.text = element_text(, hjust = 0))
+save_slide(e7, "E7_2026_teaser.png")
+e7
+```
+
+***
+# B. External benchmarks
+
+## X1. Media-reported $1m counts vs our data (data validation + communication angle)
+
+**How.** We take the $1m counts quoted in media reports and recompute the same figure from our dataset with `filter()` and `sum(million_dollar_flag)`.
+
+| Media claim | Source | Our count |
+|---|---|---|
+| 1,035 $1m flats in 2024 | EdgeProp (Dec 2025) | computed below |
+| 1,544 $1m flats in 2025, *as of 18 Dec* | EdgeProp (Dec 2025) | computed below (full year, so slightly higher) |
+| 201 $1m flats in Aug 2026, a record | 99.co Flash Report (Aug 2026) | computed below |
+
+**Why.** (1) **Validation:** matching numbers show we are using the same official source and our flag is defined correctly. (2) **Communication angle:** media report the *count*, a big, rising and headline-friendly number. The *denominator* is missing: 1,593 deals sounds like a lot, but it is **6.4% of transactions**, the **median deal was $628k**, and **94% of buyers paid less than $1m**. Our project supplies that missing context: share and distribution.
+
+```{r}
+media_check <- tribble(
+  ~claim,                         ~source,                      ~reported,
+  "2024 (full year)",             "EdgeProp",                   1035,
+  "2025 (to 18 Dec, media)",      "EdgeProp",                   1544,
+  "Aug 2026 (single month)",      "99.co Flash Report",         201
+) %>%
+  mutate(ours = c(
+    sum(hdb_all$million_dollar_flag[hdb_all$year == 2024]),
+    sum(hdb_all$million_dollar_flag[hdb_all$year == 2025]),
+    sum(hdb_all$million_dollar_flag[hdb_all$month == "2026-08"])
+  ))
+
+# The context media rarely report
+context <- hdb_all %>%
+  filter(year %in% c(2024, 2025) | month == "2026-08") %>%
+  mutate(period = case_when(month == "2026-08" ~ "Aug 2026",
+                            TRUE ~ as.character(year))) %>%
+  group_by(period) %>%
+  summarise(all_deals = n(),
+            million_share = mean(million_dollar_flag),
+            below_1m_share = 1 - mean(million_dollar_flag),
+            median_price = median(resale_price), .groups = "drop")
+
+media_check
+context
+
+x1 <- media_check %>%
+  mutate(claim = factor(claim, levels = claim),
+         share_lab = paste0("= ", percent(context$million_share[c(1, 2, 3)], 0.1),
+                            " of all deals\nmedian deal: $",
+                            comma(context$median_price[c(1, 2, 3)] / 1000), "k")) %>%
+  pivot_longer(c(reported, ours), names_to = "who", values_to = "n") %>%
+  mutate(who = recode(who, reported = "Reported by media", ours = "Our data")) %>%
+  ggplot(aes(claim, n, fill = who)) +
+  geom_col(position = position_dodge(width = 0.75), width = 0.7) +
+  geom_text(aes(label = comma(n)), position = position_dodge(width = 0.75),
+            vjust = -0.4, size = 3.8) +
+  geom_text(data = . %>% filter(who == "Our data"),
+            aes(y = 0, label = share_lab), vjust = 1.3, size = 3.4,
+            colour = "grey25", lineheight = 0.9, inherit.aes = TRUE,
+            position = position_dodge(width = 0)) +
+  scale_fill_manual(values = c("Reported by media" = col_grey, "Our data" = col_accent)) +
+  scale_y_continuous(expand = expansion(mult = c(0.25, 0.12))) +
+  labs(
+    title = "Same numbers as the headlines, but the headlines leave out the denominator",
+    subtitle = "Million-dollar HDB resale counts: media reports vs our dataset",
+    x = NULL, y = "Number of $1m+ deals", fill = NULL,
+    caption = "Sources: EdgeProp (2025); 99.co HDB Resale Flash Report (Aug 2026); HDB resale transactions (data.gov.sg).\nThe 2025 media figure covers deals to 18 Dec; ours covers the full year."
+  ) +
+  theme_deck +
+  theme(axis.text.y = element_blank(), panel.grid.major = element_blank())
+save_slide(x1, "X1_media_vs_data.png")
+x1
+```
+
+## X2. Policy timeline on the monthly price series
+
+**How.** We build a small events table with `tribble()` (date, short label), sourced from HDB/MND announcements. Then we draw the monthly 4-room median PSM and the monthly $1m count as two panels with a shared time axis, adding each event as a dotted `geom_vline()` with a numbered label.
+
+**Why.** Annotating events turns a trend line into a narrative: *when* did the curve bend, and what was happening? Below the chart, a simple **before/after table** compares the average monthly price growth in the 6 months before and after each measure.
+
+**Caveat for the slide.** The timeline is *descriptive, not causal*. Other things changed at the same time (interest rates, MOP supply, private-market prices), so we say "coincided with", never "caused".
+
+| # | Date | Event |
+|---|---|---|
+| 1 | Apr 2020 | COVID-19 circuit breaker halts construction; BTO completions delayed through 2020–21, pushing demand to resale |
+| 2 | Dec 2021 | Cooling measures: HDB loan LTV cut 90% → 85%, TDSR tightened |
+| 3 | Sep 2022 | HDB loan LTV cut 85% → 80%; 15-month wait for ex-private owners to buy resale |
+| 4 | Aug 2024 | HDB loan LTV cut 80% → 75%; Enhanced CPF Housing Grant raised |
+| 5 | Oct 2024 | Standard / Plus / Prime flat classification takes effect with the Oct 2024 BTO launch |
+
+```{r}
+events <- tribble(
+  ~date,        ~id, ~label,
+  "2020-04-01", "1", "Circuit breaker:\nBTO delays",
+  "2021-12-01", "2", "LTV 90->85%",
+  "2022-09-01", "3", "LTV 85->80%,\n15-month wait",
+  "2024-08-01", "4", "LTV 80->75%,\ngrant raised",
+  "2024-10-01", "5", "Standard/Plus/\nPrime"
+) %>% mutate(date = as.Date(date))
+
+monthly_series <- hdb %>%
+  group_by(transaction_date) %>%
+  summarise(
+    `A. Median price per sqm, 4-room (S$)` = median(price_psm[flat_type == "4 ROOM"]),
+    `B. Million-dollar deals per month` = sum(million_dollar_flag),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(-transaction_date, names_to = "panel", values_to = "value")
+
+x2 <- ggplot(monthly_series, aes(transaction_date, value)) +
+  geom_vline(data = events, aes(xintercept = date), linetype = "dotted", colour = "grey40") +
+  geom_line(data = filter(monthly_series, str_starts(panel, "A")),
+            colour = col_main, linewidth = 1) +
+  geom_col(data = filter(monthly_series, str_starts(panel, "B")),
+           fill = col_accent, width = 25) +
+  geom_label(data = events %>% mutate(panel = "A. Median price per sqm, 4-room (S$)"),
+             aes(x = date, y = Inf, label = id), vjust = 1.2, size = 3.4,
+             label.size = 0, fill = "grey92") +
+  facet_wrap(~ panel, ncol = 1, scales = "free_y") +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  scale_y_continuous(labels = comma) +
+  labs(
+    title = "Prices took off after the 2020 supply shock; cooling measures slowed, not reversed, the climb",
+    subtitle = "1 Circuit breaker / BTO delays   2 LTV 90->85% (Dec 2021)   3 LTV 85->80% (Sep 2022)\n4 LTV 80->75% + higher grants (Aug 2024)   5 Standard/Plus/Prime (Oct 2024)",
+    x = NULL, y = NULL,
+    caption = "Sources: HDB resale transactions (data.gov.sg); policy dates from HDB/MND announcements. Descriptive only: not a causal estimate."
+  ) +
+  theme_deck +
+  theme(strip.text = element_text(, hjust = 0),
+        plot.title = element_text(size = 13))
+save_slide(x2, "X2_policy_timeline.png")
+x2
+
+# Before/after: average month-on-month growth of 4-room median PSM, 6 months either side
+mom <- monthly_series %>%
+  filter(str_starts(panel, "A")) %>%
+  arrange(transaction_date) %>%
+  mutate(mom_growth = value / lag(value) - 1)
+
+policy_before_after <- events %>%
+  rowwise() %>%
+  mutate(
+    avg_mom_6m_before = mean(mom$mom_growth[mom$transaction_date >= date %m-% months(6) &
+                                              mom$transaction_date <  date], na.rm = TRUE),
+    avg_mom_6m_after  = mean(mom$mom_growth[mom$transaction_date >  date &
+                                              mom$transaction_date <= date %m+% months(6)], na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  mutate(across(starts_with("avg"), ~ percent(.x, accuracy = 0.01)))
+policy_before_after
+```
+
+### X2b. Before vs after each policy event
+
+**How.** For each event, average the month-on-month growth of the 4-room median price per sqm over the 6 months before and the 6 months after. A dumbbell chart links the two values.
+
+**Reading.** Growth sped up after the 2020 supply shock (0.71% to 1.09% a month) and slowed after each round of measures from September 2022 (for example 1.05% to 0.43% after October 2024), but stayed positive: the measures slowed the rise rather than reversing it. Descriptive only, not a causal estimate.
+
+```{r}
+events <- tribble(
+  ~date,        ~label,
+  "2020-04-01", "1  Apr 2020: circuit breaker, BTO delays",
+  "2021-12-01", "2  Dec 2021: LTV 90% -> 85%",
+  "2022-09-01", "3  Sep 2022: LTV 85% -> 80%, 15-month wait",
+  "2024-08-01", "4  Aug 2024: LTV 80% -> 75%, higher grants",
+  "2024-10-01", "5  Oct 2024: Standard / Plus / Prime"
+) %>% mutate(date = as.Date(date))
+
+# Monthly 4-room median PSM and month-on-month growth
+mom <- hdb %>%
+  filter(flat_type == "4 ROOM") %>%
+  group_by(transaction_date) %>%
+  summarise(median_psm = median(price_psm), .groups = "drop") %>%
+  arrange(transaction_date) %>%
+  mutate(mom_growth = median_psm / lag(median_psm) - 1)
+
+# Average monthly growth in the 6 months before and after each event
+policy_ba <- events %>%
+  rowwise() %>%
+  mutate(
+    `6 months before` = mean(mom$mom_growth[mom$transaction_date >= date %m-% months(6) &
+                                              mom$transaction_date <  date], na.rm = TRUE),
+    `6 months after`  = mean(mom$mom_growth[mom$transaction_date >  date &
+                                              mom$transaction_date <= date %m+% months(6)], na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+policy_ba   # table version
+
+policy_long <- policy_ba %>%
+  pivot_longer(c(`6 months before`, `6 months after`),
+               names_to = "window", values_to = "growth") %>%
+  group_by(label) %>%
+  mutate(side = if_else(growth == min(growth), "left", "right")) %>%   # put each value label outside its dot
+  ungroup() %>%
+  mutate(window = factor(window, levels = c("6 months before", "6 months after")),
+         label = factor(label, levels = rev(events$label)))
+
+x2b <- ggplot(policy_long, aes(growth, label)) +
+  geom_line(aes(group = label), colour = "grey70", linewidth = 1.2) +
+  geom_point(aes(colour = window), size = 4) +
+  geom_text(data = filter(policy_long, side == "left"),
+            aes(label = percent(growth, accuracy = 0.01), colour = window),
+            hjust = 1.35, size = 3.6, show.legend = FALSE) +
+  geom_text(data = filter(policy_long, side == "right"),
+            aes(label = percent(growth, accuracy = 0.01), colour = window),
+            hjust = -0.35, size = 3.6, show.legend = FALSE) +
+  scale_colour_manual(values = c("6 months before" = col_grey,
+                                 "6 months after"  = col_main)) +
+  scale_x_continuous(labels = label_percent(accuracy = 0.01),
+                     breaks = c(0.0025, 0.005, 0.0075, 0.01, 0.0125),
+                     limits = c(0.002, 0.0125)) +
+  labs(
+    title = "Price growth sped up after the 2020 supply shock and slowed after the 2022-24 measures",
+    subtitle = "Average monthly change in 4-room median price per sqm, 6 months before vs after each event",
+    x = "Average monthly price growth", y = NULL, colour = NULL,
+    caption = "Source: HDB resale transactions (data.gov.sg); policy dates from HDB/MND announcements.\nEvents 4 and 5 are two months apart, so their windows overlap. Descriptive only: not a causal estimate."
+  ) +
+  theme_deck +
+  theme(panel.grid.major.y = element_blank(),
+        plot.title.position = "plot", plot.caption.position = "plot",
+        plot.title = element_text(size = 13))
+
+save_slide(x2b, "X2b_policy_before_after.png")
+x2b
+```
+
+## X3. Nominal vs real prices (adjusting for inflation with CPI)
+
+**What "real" means.** Our resale prices are **nominal**: the dollars actually paid in that year. A dollar in 2025 buys less than a dollar in 2017, so part of the rise is just general inflation. The **Consumer Price Index (CPI)** measures the overall price level each year. Converting to **real** prices (here, in 2025 dollars) removes inflation:
+
+> real price = nominal price × (CPI in 2025 ÷ CPI in that year)
+
+Example: $410,000 paid in 2017 (CPI 85.1) is worth 410,000 × 100.9 / 85.1 ≈ **$486,000 in 2025 dollars**.
+
+**How.** We take annual CPI (all items, 2024 = 100, SingStat) in a `tribble()`, `left_join()` it to our yearly medians, and rescale.
+
+**Why it matters for our story.** It answers "how much of the 53% rise is just inflation?" Between 2017 and 2025, general prices rose about 19%, so the *real* median rise is roughly 29%. It also matters for $1m: **$1m in 2025 equals only about $843k in 2017 money.** If we hold the line fixed in *real* terms ($1m in 2025 dollars), the share of deals above it rose from **2.1% (2017) to 6.4% (2025): about 3×, not the 28× the nominal headline suggests.** Much of the $1m surge is the threshold itself being eroded by inflation and broad growth. This is the strongest single piece of evidence for the threshold effect, and a key point for the final report.
+
+```{r}
+cpi <- tribble(
+  ~year, ~cpi,
+  2017, 85.084, 2018, 85.457, 2019, 85.942, 2020, 85.794, 2021, 87.781,
+  2022, 93.163, 2023, 97.666, 2024, 100.000, 2025, 100.903
+)
+# Source: SingStat, Consumer Price Index (2024 = 100), annual average, all items
+
+real_prices <- hdb %>%
+  group_by(year) %>%
+  summarise(nominal = median(resale_price), .groups = "drop") %>%
+  left_join(cpi, by = "year") %>%
+  mutate(real_2025_dollars = nominal * cpi[year == 2025] / cpi)
+
+real_prices %>%
+  summarise(nominal_growth = last(nominal) / first(nominal) - 1,
+            real_growth = last(real_2025_dollars) / first(real_2025_dollars) - 1,
+            cpi_growth = last(cpi) / first(cpi) - 1,
+            one_million_2025_in_2017_dollars = 1e6 * first(cpi) / last(cpi))
+
+# Share of deals above a fixed REAL threshold ($1m in 2025 dollars) vs the nominal $1m line
+threshold_compare <- hdb %>%
+  left_join(cpi, by = "year") %>%
+  mutate(real_price = resale_price * cpi[year == 2025][1] / cpi) %>%
+  group_by(year) %>%
+  summarise(`Nominal: price >= $1m` = mean(resale_price >= 1e6),
+            `Real: price >= $1m in 2025 dollars` = mean(real_price >= 1e6),
+            .groups = "drop")
+threshold_compare
+
+x3 <- real_prices %>%
+  select(year, `Nominal (dollars of each year)` = nominal,
+         `Real (2025 dollars)` = real_2025_dollars) %>%
+  pivot_longer(-year, names_to = "measure", values_to = "price") %>%
+  ggplot(aes(year, price, colour = measure)) +
+  geom_line(linewidth = 1.1) + geom_point(size = 2) +
+  geom_text(data = . %>% filter(year %in% c(2017, 2025)),
+            aes(label = paste0("$", round(price / 1000), "k")),
+            vjust = -0.9, size = 3.6, show.legend = FALSE) +
+  scale_colour_manual(values = c("Nominal (dollars of each year)" = col_main,
+                                 "Real (2025 dollars)" = col_accent)) +
+  scale_x_continuous(breaks = 2017:2025) +
+  scale_y_continuous(labels = label_dollar(scale = 1/1000, suffix = "k"),
+                     limits = c(380000, 680000)) +
+  labs(
+    title = "After inflation, the typical resale price rose about 29%, not 53%",
+    subtitle = "Median HDB resale price, nominal vs inflation-adjusted (2025 dollars)",
+    x = NULL, y = "Median resale price", colour = NULL,
+    caption = "Sources: HDB resale transactions (data.gov.sg); SingStat CPI, all items (2024 = 100)."
+  ) +
+  theme_deck
+save_slide(x3, "X3_nominal_vs_real.png")
+x3
+```
+
+## X4. Price-to-income ratio (SingStat household income)
+
+**What it is.** A standard affordability measure: **price ÷ annual household income**, meaning *how many years of a typical household's full income a typical flat costs*.
+
+**Data.** SingStat *Key Household Income Trends*: median monthly household income from work (including employer CPF) among resident employed households. **Series break:** from the 2025 edition, SingStat switched to "market income" for all resident households (2025: $12,446), which is not comparable. So the consistent ratio runs **2017–2024**.
+
+**How.** `tribble()` of incomes → `left_join()` to yearly median resale prices → ratio = median price ÷ (monthly income × 12). We also compute how many years of median income a **$1m flat** costs.
+
+**Why it matters.** Price growth alone does not say whether housing became *less affordable*: incomes also grew. This chart tells us whether prices outran incomes. It links our analysis to the affordability and policy discussion in the report appendix.
+
+```{r}
+income <- tribble(
+  ~year, ~median_monthly_income,
+  2017, 9023, 2018, 9293, 2019, 9425, 2020, 9189,
+  2021, 9520, 2022, 10099, 2023, 10869, 2024, 11297
+)
+# Source: SingStat, Key Household Income Trends (2017-2024 editions).
+# Median monthly household income from work incl. employer CPF, resident employed households.
+# 2025 edition changed definition (market income, all households) -> not comparable, excluded.
+
+pti <- hdb %>%
+  group_by(year) %>%
+  summarise(
+    median_price_all = median(resale_price),
+    median_price_4rm = median(resale_price[flat_type == "4 ROOM"]),
+    .groups = "drop"
+  ) %>%
+  inner_join(income, by = "year") %>%
+  mutate(
+    annual_income = median_monthly_income * 12,
+    `Typical resale flat (all types)` = median_price_all / annual_income,
+    `Typical 4-room flat` = median_price_4rm / annual_income,
+    `A $1m flat` = 1e6 / annual_income
+  )
+
+pti %>% select(year, annual_income, `Typical resale flat (all types)`,
+               `Typical 4-room flat`, `A $1m flat`)
+
+x4 <- pti %>%
+  select(year, `Typical resale flat (all types)`, `Typical 4-room flat`, `A $1m flat`) %>%
+  pivot_longer(-year, names_to = "flat", values_to = "ratio") %>%
+  mutate(flat = factor(flat, levels = c("A $1m flat", "Typical 4-room flat",
+                                        "Typical resale flat (all types)"))) %>%
+  ggplot(aes(year, ratio, colour = flat)) +
+  geom_line(linewidth = 1.1) + geom_point(size = 2) +
+  geom_text(data = . %>% filter(year %in% c(2017, 2024)),
+            aes(label = sprintf("%.1f", ratio)), vjust = -0.9, size = 3.6,
+            show.legend = FALSE) +
+  scale_colour_manual(values = c("A $1m flat" = col_accent,
+                                 "Typical 4-room flat" = col_main,
+                                 "Typical resale flat (all types)" = col_grey)) +
+  scale_x_continuous(breaks = 2017:2024) +
+  scale_y_continuous(limits = c(0, 10.5)) +
+  labs(
+    title = "A typical resale flat went from ~3.8 to ~4.4 years of household income",
+    subtitle = "Price-to-income ratio: median resale price / median annual household income from work",
+    x = NULL, y = "Years of household income", colour = NULL,
+    caption = "Sources: HDB resale transactions (data.gov.sg); SingStat Key Household Income Trends 2017-2024.\n2025 excluded: SingStat changed the income definition in 2025."
+  ) +
+  theme_deck
+save_slide(x4, "X4_price_to_income.png")
+x4
+```
+
+### X4b. Years of income by household income group (SingStat deciles)
+
+**How.** SingStat average monthly household employment income by decile (excluding employer CPF), 2017–2025. Years of income = price / (monthly income × 12): a typical flat for a 5th-decile household, and a $1m flat for 8th-, 9th- and 10th-decile households.
+
+**Reading.** A typical flat went from 4.1 to 4.7 years of a middle household's income. A $1m flat fell from 5.8 to 4.4 years for an 8th-decile household and from 4.7 to 3.7 for a 9th-decile household. For the top 20% of households, a $1m flat now costs about what a typical flat costs a middle household.
+
+```{r}
+# SingStat: Average monthly household employment income (excluding employer CPF)
+# among resident employed households, by decile (data.gov.sg d_a0a94216a4bb495fcd8682934ce85003)
+deciles <- tribble(
+  ~year, ~d5,   ~d8,   ~d9,   ~d10,
+  2017,  8254, 14353, 17808, 30021,
+  2018,  8412, 14556, 18416, 29192,
+  2019,  8689, 15187, 18642, 29463,
+  2020,  8672, 14618, 18234, 29241,
+  2021,  8903, 14987, 18755, 27128,
+  2022,  9321, 16096, 20237, 29547,
+  2023,  9916, 17464, 21119, 30914,
+  2024, 10126, 17972, 22157, 32492,
+  2025, 11143, 18887, 22723, 32488
+)
+
+typical_price <- hdb %>%
+  group_by(year) %>%
+  summarise(median_price = median(resale_price), .groups = "drop")
+
+years_income <- deciles %>%
+  left_join(typical_price, by = "year") %>%
+  transmute(
+    year,
+    `Typical flat, middle household (5th decile)` = median_price / (d5 * 12),
+    `$1m flat, 8th-decile household`              = 1e6 / (d8 * 12),
+    `$1m flat, 9th-decile household`              = 1e6 / (d9 * 12),
+    `$1m flat, top-10% household (10th decile)`   = 1e6 / (d10 * 12)
+  ) %>%
+  pivot_longer(-year, names_to = "case", values_to = "years") %>%
+  mutate(case = factor(case, levels = c(
+    "$1m flat, 8th-decile household", "Typical flat, middle household (5th decile)",
+    "$1m flat, 9th-decile household", "$1m flat, top-10% household (10th decile)")))
+
+years_income %>% filter(year %in% c(2017, 2025)) %>%
+  pivot_wider(names_from = year, values_from = years)
+
+x4b <- ggplot(years_income, aes(year, years, colour = case, linetype = case)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2) +
+  # end labels beside the points: 2017 on the left, 2025 on the right
+  geom_text(data = filter(years_income, year == 2017),
+            aes(label = sprintf("%.1f", years)), hjust = 1.4, size = 3.5, show.legend = FALSE) +
+  geom_text(data = filter(years_income, year == 2025),
+            aes(label = sprintf("%.1f", years)), hjust = -0.4, size = 3.5, show.legend = FALSE) +
+  scale_colour_manual(values = c(
+    "Typical flat, middle household (5th decile)" = "black",
+    "$1m flat, 8th-decile household"              = "#E3A15F",
+    "$1m flat, 9th-decile household"              = col_accent,
+    "$1m flat, top-10% household (10th decile)"   = "#9C5A16")) +
+  scale_linetype_manual(values = c(
+    "Typical flat, middle household (5th decile)" = "dashed",
+    "$1m flat, 8th-decile household"              = "solid",
+    "$1m flat, 9th-decile household"              = "solid",
+    "$1m flat, top-10% household (10th decile)"   = "solid")) +
+  scale_x_continuous(breaks = 2017:2025, expand = expansion(add = 0.5)) +
+  scale_y_continuous(limits = c(0, 7)) +
+  guides(colour = guide_legend(ncol = 2), linetype = guide_legend(ncol = 2)) +
+  labs(
+    title = "For the top 20% of households, a $1m flat now costs about what a typical flat costs a middle household",
+    subtitle = "Years of household income needed: price / (average monthly household employment income x 12)",
+    x = NULL, y = "Years of household income", colour = NULL, linetype = NULL,
+    caption = "Sources: HDB resale transactions (data.gov.sg); SingStat average monthly household employment income by decile,\nresident employed households, excluding employer CPF (data.gov.sg). Decile = average income within that 10% group."
+  ) +
+  theme_deck +
+  theme(plot.title.position = "plot", plot.caption.position = "plot",
+        plot.title = element_text(size = 12))
+
+save_slide(x4b, "X4b_income_deciles.png")
+x4b
+```
+
+## X5. Media headline analysis
+
+**What it is.** A small **content analysis** linking our data story to communication theory: **agenda-setting**, **framing** and **base-rate neglect**.
+
+**Data (`media_headlines.csv`, 123 articles from 6 outlets, 2017–2025).** Marked in the `dataset` column:
+
+- **Factiva, The Straits Times (50) and CNA (10).** Search: ("million dollar" or "million-dollar") and (HDB or flat or flats), Jan 2017–Dec 2025. Kept only articles whose headline or first paragraph is about million-dollar HDB flats; duplicates and passing mentions were excluded (ST: 50 of 100 results; CNA: 10 of 63).
+- **Web search (63).** Mothership (42), EdgeProp (11), 99.co (8) and TODAY (2), 2019–2025.
+
+**Columns.** `frame` (record / market_update / explainer / contextualised / affordability / policy); `gives_denominator` (headline or first paragraph gives the share of all deals or calls $1m flats a minority); `context_in_body` (that context appears anywhere in the article); `dataset`. For Factiva articles, body context was screened by keyword (per cent, %, proportion, fraction, minority, outlier, exception, median) and every hit was checked by hand.
+
+**Frames** (chart labels in brackets). `record` (Record-breaking): headline stresses a new high, a first or the most expensive (including single $1m sales). `market_update` (Market-wide overview): routine monthly / quarterly market report that mentions the $1m count without record wording. `explainer`: who buys them, where they are, what drives prices. `contextualised`: headline stresses that $1m flats are a minority or not a cause for alarm. `affordability`: headline raises whether housing is still affordable. `policy`: government measures or statements.
+
+**Reading.** Only 4 of 123 articles (all ST) gave the share in the headline or first paragraph; 69% of headlines (85 of 123) presented $1m flats as record-breaking ("new high", "most expensive"). Context appeared somewhere in 67 articles, usually further down the story. CNA's coverage leaned more towards commentary on affordability and policy than towards record-price stories.
+
+**Over time (X5c).** The share of articles giving context somewhere rose from under 40% before 2022 to 91% in 2024 and 71% in 2025, but articles giving it up front stayed near zero. Years before 2020 have fewer than 5 articles each.
+
+**Limitation.** The web-search outlets were not searched systematically and favour recent articles.
+
+```{r}
+media <- read_csv("../data/media_headlines.csv", show_col_types = FALSE)
+
+# Numbers used in titles and captions, computed from the data
+n_all     <- nrow(media)
+n_up      <- sum(media$gives_denominator)
+n_record  <- sum(media$frame == "record")
+outlets   <- media %>% count(outlet, sort = TRUE)
+outlet_list <- paste(outlets$outlet, collapse = ", ")
+outlet_caption <- paste0(outlets$outlet, " (", outlets$n, ")", collapse = "; ")
+year_range <- paste(range(year(as.Date(media$date))), collapse = "-")
+
+# ---------- X5a. Where does the article tell readers the share? (one square = one article)
+media <- media %>%
+  mutate(where_share = case_when(
+    gives_denominator ~ "Share given in headline or first paragraph",
+    context_in_body   ~ "Share given only further down the article",
+    TRUE              ~ "Share never given"
+  ),
+  where_share = factor(where_share, levels = c(
+    "Share given in headline or first paragraph",
+    "Share given only further down the article",
+    "Share never given")))
+
+counts_a <- media %>% count(where_share)
+counts_a
+
+n_cols <- 21   # squares per row
+waffle <- media %>%
+  arrange(where_share) %>%
+  mutate(i = row_number() - 1,
+         x = i %% n_cols,
+         y = -(i %/% n_cols))
+
+legend_labels <- setNames(
+  paste0(counts_a$where_share, " (", counts_a$n, ")"),
+  counts_a$where_share)
+
+x5a <- ggplot(waffle, aes(x, y, fill = where_share)) +
+  geom_tile(colour = "white", linewidth = 1.2, width = 0.92, height = 0.92) +
+  coord_equal() +
+  scale_fill_manual(values = c(
+    "Share given in headline or first paragraph" = col_accent,
+    "Share given only further down the article"  = "#9DB7CF",
+    "Share never given"                          = col_grey),
+    labels = legend_labels) +
+  labs(title = paste0("Only ", n_up, " of ", n_all, " articles told readers the share up front"),
+       x = NULL, y = NULL, fill = NULL) +
+  theme_void(base_size = 11) +
+  theme(plot.title = element_text(size = 13, margin = margin(b = 6)),
+        plot.title.position = "plot",
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(0.4, "cm"),
+        plot.margin = margin(6, 6, 6, 6))
+
+# Version 1: legend on the right (wide, short)
+x5a_right <- x5a +
+  guides(fill = guide_legend(ncol = 1)) +
+  theme(legend.position = "right")
+ggsave("X5a_where_share_legend_right.png", x5a_right, width = 8, height = 1.95, dpi = 200, bg = "white")
+
+# Version 2: legend below (narrower)
+x5a_bottom <- x5a +
+  guides(fill = guide_legend(ncol = 1)) +
+  theme(legend.position = "bottom", legend.justification = "left")
+ggsave("X5a_where_share_legend_bottom.png", x5a_bottom, width = 6, height = 2.75, dpi = 200, bg = "white")
+
+x5a_right
+
+# ---------- X5b. How headlines frame the story
+frame_labels <- c(
+  record         = "Record-breaking",
+  explainer      = "Explainer",
+  market_update  = "Market-wide overview",
+  contextualised = "Downplays them",
+  affordability  = "Affordability concern",
+  policy         = "Policy"
+)
+
+counts_b <- media %>%
+  count(frame) %>%
+  mutate(label = frame_labels[frame],
+         label = fct_reorder(label, n),
+         highlight = frame == "record")
+counts_b
+
+x5b <- ggplot(counts_b, aes(n, label, fill = highlight)) +
+  geom_col(width = 0.75) +
+  geom_text(aes(label = n), hjust = -0.3, size = 5) +
+  geom_text(data = filter(counts_b, highlight), aes(x = 2, label = "\u201cnew high\u201d, \u201cmost expensive\u201d"),
+            hjust = 0, colour = "white", size = 4.6) +   # examples written inside the bar
+  # short descriptions next to the shorter bars
+  geom_text(data = tibble(label = factor(c("Explainer", "Market-wide overview"), levels = levels(counts_b$label)),
+                          n = c(14, 11),
+                          note = c("who buys, where, why", "monthly / quarterly price reports")),
+            aes(x = 21, y = label, label = note), inherit.aes = FALSE,
+            hjust = 0, colour = "grey35", size = 4.6) +
+  scale_fill_manual(values = c(`TRUE` = col_accent, `FALSE` = col_grey), guide = "none") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = paste0(percent(n_record / n_all, accuracy = 1), " of headlines (", n_record, " of ", n_all,
+                      ") presented $1m flats as record-breaking"),
+       x = NULL, y = NULL) +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16),
+        plot.title.position = "plot",
+        axis.text.y = element_text(size = 13, colour = "grey20"),
+        axis.text.x = element_blank(), panel.grid = element_blank(),
+        plot.margin = margin(4, 8, 2, 4))
+
+# Compact size for slides: smaller canvas = larger text relative to the chart
+ggsave("X5b_frames.png", x5b, width = 7.5, height = 2.9, dpi = 220, bg = "white")
+x5b
+
+# ---------- X5c. Over time: context became more common in the body, but not up front
+by_year <- media %>%
+  mutate(year = year(as.Date(date))) %>%
+  group_by(year) %>%
+  summarise(n = n(),
+            `Share given anywhere in the article` = mean(context_in_body),
+            `Share given up front (headline or first paragraph)` = mean(gives_denominator),
+            .groups = "drop")
+by_year
+
+by_year_long <- by_year %>%
+  pivot_longer(-c(year, n), names_to = "measure", values_to = "pct") %>%
+  mutate(measure = factor(measure, levels = c("Share given anywhere in the article",
+                                              "Share given up front (headline or first paragraph)")))
+
+sparse_years <- by_year %>% filter(n < 5)   # too few articles to read as a trend
+
+lab_end <- by_year_long %>% filter(year == max(year)) %>%
+  mutate(lab = ifelse(str_detect(measure, "anywhere"), "Anywhere in article", "Up front"))
+
+x5c <- ggplot(by_year_long, aes(year, pct, colour = measure)) +
+  geom_rect(data = sparse_years, inherit.aes = FALSE,
+            aes(xmin = year - 0.5, xmax = year + 0.5, ymin = -Inf, ymax = Inf),
+            fill = "grey94") +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2.2) +
+  geom_text(data = filter(by_year_long, str_detect(measure, "anywhere"), year >= 2020) %>%
+              mutate(vj = ifelse(year %in% c(2021, 2023), 1.9, -0.9)),   # dips: label below
+            aes(label = percent(pct, accuracy = 1), vjust = vj), size = 3.4, show.legend = FALSE) +
+  geom_text(data = lab_end, aes(label = lab), hjust = 0, nudge_x = 0.2, size = 3.6,
+            show.legend = FALSE) +
+  scale_colour_manual(values = c("Share given anywhere in the article" = "#5C86AD",
+                                 "Share given up front (headline or first paragraph)" = col_accent)) +
+  scale_x_continuous(breaks = by_year$year,
+                     labels = paste0(by_year$year, "\nn=", by_year$n),
+                     expand = expansion(add = c(0.4, 2.4))) +
+  scale_y_continuous(labels = label_percent(), limits = c(0, 1.05),
+                     breaks = c(0, .5, 1)) +
+  coord_cartesian(clip = "off") +
+  labs(title = "Media added context over time, but almost never up front",
+       x = NULL, y = NULL) +
+  theme_deck +
+  theme(plot.title.position = "plot", legend.position = "none",
+        panel.grid.minor = element_blank(),
+        plot.margin = margin(4, 6, 2, 4))
+
+ggsave("X5c_context_over_time.png", x5c, width = 7.5, height = 3.2, dpi = 220, bg = "white")
+x5c
+```
+
+***
+# C. Validation models (for the final report)
+
+The EDA gives a working hypothesis. These three analyses test it formally:
+
+| Model | Question | Supports which half of the story |
+|---|---|---|
+| **V1** log-price regression with year × segment interactions | After holding flat attributes constant, did every flat type and town appreciate by a similar *percentage*? | Broad |
+| **V2** logistic regression (`glm`, binomial) | Which attributes raise the odds of a $1m sale, and does the model beat a naive baseline on unseen 2025 data? | Concentrated |
+| **V3** counterfactual threshold simulation | If every 2017 flat had simply grown at the median rate, how many would have crossed $1m? | Links the two halves |
+
+## V1. Log-price regression: was appreciation broad across segments?
+
+**Changes from our Model 1 and why:**
+
+- **`log(resale_price)` instead of dollars.** A coefficient now means a *percentage* change. A threshold effect needs *proportional* growth, and on the dollar scale a 50% rise looks bigger for expensive flats simply because they start higher.
+- **`factor(year)` instead of a linear `year`.** This estimates a separate price level for each year, so it does not force a straight-line trend through the 2017–20 plateau and the 2021+ surge.
+- **Interactions `factor(year):flat_type` and `factor(year):town`.** These let each segment have its *own* appreciation path. If appreciation was broad, the segment-specific 2017→2025 changes will cluster tightly; if it was concentrated, a few segments will stand out.
+- Estimated on all 2017–2025 data. This is an *explanatory* model, not a forecast, so there is no train/test split. The interaction terms are converted back to "% change 2017→2025 for this segment" with `exp(b) - 1`.
+
+```{r}
+v1_data <- hdb %>%
+  filter(flat_type %in% c("3 ROOM", "4 ROOM", "5 ROOM", "EXECUTIVE")) %>%
+  mutate(year_f = factor(year),
+         flat_type = factor(flat_type, levels = c("4 ROOM", "3 ROOM", "5 ROOM", "EXECUTIVE")),
+         town = relevel(factor(town), ref = "TAMPINES"))
+
+# (a) flat-type paths
+v1a <- lm(log(resale_price) ~ year_f * flat_type + floor_area_sqm + flat_age +
+            storey_midpoint + town, data = v1_data)
+
+# (b) town paths
+v1b <- lm(log(resale_price) ~ year_f * town + flat_type + floor_area_sqm + flat_age +
+            storey_midpoint, data = v1_data)
+
+summary(v1a)$r.squared; summary(v1b)$r.squared
+
+# Helper: 2017->2025 % change for each level, holding attributes constant
+seg_change <- function(model, var, levels, ref) {
+  b <- coef(model)
+  base <- b["year_f2025"]
+  tibble(level = levels) %>%
+    mutate(term = paste0("year_f2025:", var, level),
+           extra = ifelse(level == ref, 0, coalesce(b[term], 0)),
+           pct_change_2017_2025 = exp(base + extra) - 1)
+}
+
+v1a_res <- seg_change(v1a, "flat_type", levels(v1_data$flat_type), "4 ROOM")
+v1b_res <- seg_change(v1b, "town", levels(v1_data$town), "TAMPINES")
+
+v1a_res %>% select(level, pct_change_2017_2025)
+summary(v1b_res$pct_change_2017_2025)
+
+v1_plot <- v1b_res %>%
+  mutate(level = fct_reorder(level, pct_change_2017_2025),
+         highlight = level %in% c("TOA PAYOH", "BUKIT MERAH", "QUEENSTOWN",
+                                  "KALLANG/WHAMPOA", "CLEMENTI"))
+
+v1 <- ggplot(v1_plot, aes(pct_change_2017_2025, level, fill = highlight)) +
+  geom_col(width = 0.7) +
+  geom_vline(xintercept = median(v1_plot$pct_change_2017_2025), linetype = "dashed") +
+  scale_fill_manual(values = c(`TRUE` = col_accent, `FALSE` = col_grey),
+                    labels = c(`TRUE` = "Top-5 $1m towns (E4)", `FALSE` = "Other towns")) +
+  scale_x_continuous(labels = label_percent()) +
+  labs(
+    title = "The top $1m towns did not grow faster: they simply started closer to $1m",
+    subtitle = "Estimated % price change 2017-2025 by town, holding flat attributes constant",
+    x = "Estimated price change, 2017-2025", y = NULL, fill = NULL,
+    caption = "Model: log(price) ~ year x town + flat type + floor area + flat age + storey. Dashed line = median town."
+  ) +
+  theme_deck +
+  theme(axis.text.y = element_text(size = 8))
+save_slide(v1, "V1_town_appreciation.png")
+v1
+```
+
+**How to read V1.** If the orange bars (the top-5 $1m towns) sat far to the right, the $1m boom would be a story of a few towns pulling away.
+
+**Result.** Every town rose substantially (+31% to +75%, median +50%), and all four flat types rose by a similar 52–62% (`v1a_res`). The five towns that produce most $1m deals actually appreciated **at or below** the median (+38% to +50%). The fastest growth was in non-mature towns such as Sembawang, Woodlands and Sengkang. So those towns dominate the $1m segment because they *started* higher, closer to the line, not because they grew faster. This supports the threshold-effect hypothesis: broad growth plus a fixed line.
+
+## V2. Logistic regression: what makes a $1m sale more likely?
+
+**Additions to our Model 2 and why:**
+
+- **Odds ratios** (`exp(coef)`) per meaningful unit (+10 sqm, +10 years of age, +3 storeys), because raw logit coefficients are hard to communicate.
+- **A naive baseline.** The model is useful only if it beats "predict every flat has the training-period average probability". We compare Brier scores (lower is better).
+- **AUC.** The probability that the model ranks a random $1m flat above a random non-$1m flat (0.5 = coin flip, 1 = perfect).
+- **Note on the warning** *"fitted probabilities numerically 0 or 1"*: some town × flat-type combinations (for example most 3-room flats) never reach $1m, so the model predicts exactly 0 for them. This is **quasi-separation**. Mention it as a limitation; the numeric odds ratios remain interpretable.
+
+```{r}
+train <- hdb %>% filter(year <= 2024)
+test  <- hdb %>% filter(year == 2025,
+                        town %in% unique(train$town),
+                        flat_type %in% unique(train$flat_type))
+
+premium_model <- glm(
+  million_dollar_flag ~ floor_area_sqm + flat_age + storey_midpoint +
+    town + flat_type + year,
+  data = train, family = binomial()
+)
+
+# Odds ratios per meaningful unit
+b <- coef(premium_model)
+odds_ratios <- tibble(
+  change = c("+10 sqm floor area", "+10 years flat age", "+3 storeys", "+1 year (time trend)"),
+  odds_ratio = exp(c(10 * b["floor_area_sqm"], 10 * b["flat_age"],
+                     3 * b["storey_midpoint"], b["year"]))
+) %>% mutate(interpretation = paste0(ifelse(odds_ratio > 1, "+", ""),
+                                     percent(odds_ratio - 1, accuracy = 1), " odds"))
+odds_ratios
+
+# Predict 2025 and evaluate
+test <- test %>%
+  mutate(p_model = predict(premium_model, newdata = test, type = "response"),
+         p_naive = mean(train$million_dollar_flag),
+         y = as.numeric(million_dollar_flag))
+
+auc_fun <- function(y, p) {               # Mann-Whitney formulation of AUC
+  r <- rank(p); n1 <- sum(y == 1); n0 <- sum(y == 0)
+  (sum(r[y == 1]) - n1 * (n1 + 1) / 2) / (n1 * n0)
+}
+
+v2_eval <- tibble(
+  model = c("Naive baseline (training average)", "Logistic regression"),
+  brier = c(mean((test$y - test$p_naive)^2), mean((test$y - test$p_model)^2)),
+  auc   = c(0.5, auc_fun(test$y, test$p_model))
+)
+v2_eval
+
+# Calibration: does the model's total predicted count match the actual 2025 count?
+tibble(actual_2025_million = sum(test$y),
+       predicted_2025_million = sum(test$p_model))
+```
+
+```{r}
+v2 <- odds_ratios %>%
+  mutate(change = fct_reorder(change, odds_ratio)) %>%
+  ggplot(aes(odds_ratio, change)) +
+  geom_vline(xintercept = 1, colour = "grey50") +
+  geom_segment(aes(x = 1, xend = odds_ratio, yend = change), colour = col_main, linewidth = 1) +
+  geom_point(size = 4, colour = col_accent) +
+  geom_text(aes(label = interpretation), vjust = -1, size = 3.8) +
+  scale_x_log10(expand = expansion(mult = c(0.08, 0.12))) +
+  labs(
+    title = "Size, storey and newness sharply raise the odds of a $1m sale",
+    subtitle = "Odds ratios from logistic regression (train 2017-2024), log scale; 1 = no effect",
+    x = "Odds ratio (log scale)", y = NULL,
+    caption = "Model also controls for town and flat type. Source: HDB resale transactions, data.gov.sg."
+  ) +
+  theme_deck
+save_slide(v2, "V2_odds_ratios.png")
+v2
+```
+
+## V3. Counterfactual threshold simulation: is the $1m surge "just" a broad shift?
+
+**Idea.** Take the 2017 transactions. For each later year, multiply *every* 2017 price by the same factor: the realised growth of the market median. This simulates a world where **all flats rose at exactly the same rate** (a perfectly broad shift, with no extra growth at the top). Then count how many would cross $1m and compare with what actually happened.
+
+**How.** `growth_t = median(price in year t) / median(price in 2017)`, then for each year `mean(price_2017 * growth_t >= 1e6)`. We use `map_dfr()` from purrr to loop over years.
+
+**Reading.**
+- If the counterfactual line is **at or above** the actual line, a uniform shift alone is enough to explain the surge. The $1m boom is mainly a threshold effect, not the top pulling away.
+- If the actual line is **far above**, premium flats grew faster than the market (concentration).
+- **Caveat:** this holds the 2017 *mix* of flats fixed. In reality the mix sold changes (for example, more newer flats reaching MOP), so state this as a simplifying assumption.
+
+```{r}
+p2017 <- hdb$resale_price[hdb$year == 2017]
+
+growth <- hdb %>%
+  group_by(year) %>%
+  summarise(median_price = median(resale_price),
+            actual_share = mean(million_dollar_flag), .groups = "drop") %>%
+  mutate(growth_factor = median_price / median_price[year == 2017])
+
+v3_data <- growth %>%
+  mutate(counterfactual_share = map_dbl(growth_factor, ~ mean(p2017 * .x >= 1e6)))
+
+v3_data %>% select(year, growth_factor, actual_share, counterfactual_share)
+
+v3 <- v3_data %>%
+  select(year, `Actual share at $1m+` = actual_share,
+         `If every 2017 flat grew at the median rate` = counterfactual_share) %>%
+  pivot_longer(-year, names_to = "series", values_to = "share") %>%
+  ggplot(aes(year, share, colour = series, linetype = series)) +
+  geom_line(linewidth = 1.2) + geom_point(size = 2.2) +
+  geom_text(data = . %>% filter(year == 2025),
+            aes(label = percent(share, accuracy = 0.1)), hjust = -0.3, size = 3.8,
+            show.legend = FALSE) +
+  scale_colour_manual(values = c("Actual share at $1m+" = col_accent,
+                                 "If every 2017 flat grew at the median rate" = col_main)) +
+  scale_linetype_manual(values = c("Actual share at $1m+" = "solid",
+                                   "If every 2017 flat grew at the median rate" = "dashed")) +
+  scale_x_continuous(breaks = 2017:2025, expand = expansion(add = c(0.2, 0.7))) +
+  scale_y_continuous(labels = label_percent()) +
+  guides(colour = guide_legend(ncol = 1), linetype = guide_legend(ncol = 1)) +
+  labs(
+    title = "A uniform price rise alone would have produced even more $1m deals",
+    subtitle = "Share of transactions at $1m+: actual vs counterfactual where all 2017 prices grow at the median rate",
+    x = NULL, y = "Share of transactions", colour = NULL, linetype = NULL,
+    caption = "Counterfactual holds the 2017 mix of flats fixed. Source: HDB resale transactions, data.gov.sg."
+  ) +
+  theme_deck
+save_slide(v3, "V3_threshold_counterfactual.png")
+v3
+```
