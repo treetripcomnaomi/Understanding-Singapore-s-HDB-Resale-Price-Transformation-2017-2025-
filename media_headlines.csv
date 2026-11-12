@@ -1,0 +1,124 @@
+date,outlet,headline,frame,gives_denominator,context_in_body,url,date_approx,dataset
+2017-11-10,The Straits Times,Three Housing Board flats hit $1 million mark in resale market,record,FALSE,FALSE,Factiva STIMES0020171110edba002uv,FALSE,Factiva ST
+2018-07-01,The Straits Times,Standard but standout flats that sell for over $1m,explainer,FALSE,FALSE,Factiva STIMES0020180630ee710034r,FALSE,Factiva ST
+2018-11-21,CNA,HDB terrace near Whampoa sold for record price of nearly S$1.2 million,record,FALSE,FALSE,Factiva CNEWAS0020181121eebl000uo,FALSE,Factiva CNA
+2019-01-21,EdgeProp,Will there be more million-dollar HDB transactions in 2019?,record,FALSE,FALSE,https://edgeprop.sg/property-news/will-there-be-more-million-dollar-hdb-transactions-2019,FALSE,Pilot web search
+2019-02-04,The Straits Times,"Million-dollar HDB flats: Location, type and size count",explainer,FALSE,TRUE,Factiva STIMES0020190203ef24003na,FALSE,Factiva ST
+2019-03-11,Mothership,Resale HDB flat in Boon Keng sold for S$1.185 million,record,FALSE,FALSE,https://mothership.sg/2019/03/boon-keng-resale-price/,FALSE,Pilot web search
+2019-05-09,Mothership,"Bukit Merah 5-room HDB flat sold for S$1.2 million, most expensive ever sold",record,FALSE,FALSE,https://mothership.sg/2019/05/5-room-hdb-flat-million-dollar-expensive/,FALSE,Pilot web search
+2020-06-06,Mothership,Jumbo HDB flat at Ang Mo Kio Ave 5 sold for record S$1.03 million,record,FALSE,FALSE,https://mothership.sg/2020/06/ang-mo-kio-jumbo-flat/,FALSE,Pilot web search
+2020-07-19,Mothership,"5-room HDB resale flat in Clementi sold for S$1.04 million, paid for in cash",record,FALSE,FALSE,https://mothership.sg/2020/07/clementi-hdb-flat-1-million/,FALSE,Pilot web search
+2020-09-13,The Straits Times,Skyscraper resale flat prices hit new highs despite crisis,record,TRUE,TRUE,Factiva STIMES0020200912eg9d004vx,FALSE,Factiva ST
+2020-10-08,TODAY,Eight Singapore HDB units changed hands for at least S$1m in September as resale market remains buoyant,record,FALSE,TRUE,https://www.malaymail.com/news/singapore/2020/10/08/eight-singapore-hdb-units-changed-hands-for-at-least-s1m-in-september-as-re/1910938,FALSE,Pilot web search
+2020-10-15,The Straits Times,Flats sold for at least $1m made up 0.3% of total resale deals,contextualised,TRUE,TRUE,Factiva STIMES0020201014egaf005ok,FALSE,Factiva ST
+2020-11-05,The Straits Times,HDB resale prices rise for 4th month in October; 13 million-dollar flats sold: SRX,market_update,FALSE,TRUE,Factiva STIMES0020201105egb5000xe,FALSE,Factiva ST
+2020-12-10,The Straits Times,"72 million-dollar HDB flats sold in first 11 months of 2020, up from 64 last year",record,FALSE,FALSE,Factiva STIMES0020201210egca0015q,FALSE,Factiva ST
+2021-01-07,The Straits Times,"82 HDB resale flats sold for at least $1m in 2020 as overall prices, sales rise: SRX",record,FALSE,FALSE,Factiva STIMES0020210107eh170018h,FALSE,Factiva ST
+2021-01-08,TODAY,"Record 82 million-dollar HDB flats sold in Singapore in 2020, SRX data shows",record,FALSE,TRUE,https://www.malaymail.com/news/singapore/2021/01/08/record-82-million-dollar-hdb-flats-sold-in-2020-srx-data-shows/1938457,FALSE,Pilot web search
+2021-01-08,The Straits Times,82 million-dollar HDB resale flats sold last year in new high,record,FALSE,FALSE,Factiva STIMES0020210107eh180064v,FALSE,Factiva ST
+2021-02-03,Mothership,"Bishan DBSS flat sold for S$1.21m, 6th flat to be sold above S$1m in last 6 months",record,FALSE,FALSE,https://mothership.sg/2021/02/bishan-dbss-flat-1-21m/,FALSE,Pilot web search
+2021-03-29,The Straits Times,Million-dollar HDB flats: Who's buying them and where are they located in Singapore?,explainer,FALSE,FALSE,Factiva STIMES0020210329eh3t002bd,FALSE,Factiva ST
+2021-03-29,The Straits Times,Million-dollar HDB flats: Who's buying them?,explainer,TRUE,TRUE,Factiva STIMES0020210328eh3t004v6,FALSE,Factiva ST
+2021-04-01,The Straits Times,"HDB resale prices rise 2.8% in Q1, with 53 million-dollar flats sold",market_update,FALSE,FALSE,Factiva STIMES0020210401eh41001bb,FALSE,Factiva ST
+2021-05-06,The Straits Times,21 million-dollar HDB resale flats sold in April as overall prices rise for 10th straight month,market_update,FALSE,TRUE,Factiva STIMES0020210506eh56000up,FALSE,Factiva ST
+2021-05-07,The Straits Times,21 million-dollar HDB resale flats sold last month,market_update,FALSE,TRUE,Factiva STIMES0020210506eh570067h,FALSE,Factiva ST
+2021-05-30,The Straits Times,What makes a $1m HDB flat,explainer,FALSE,FALSE,Factiva STIMES0020210529eh5u0040o,FALSE,Factiva ST
+2021-06-01,The Straits Times,87 million-dollar HDB flats sold in first five months of 2021 in new high,record,FALSE,TRUE,Factiva STIMES0020210601eh610035y,FALSE,Factiva ST
+2021-06-14,The Straits Times,Are $1m HDB resale flats going to be 'normal' from now on?,explainer,FALSE,TRUE,Factiva STIMES0020210613eh6e0049h,FALSE,Factiva ST
+2021-06-14,The Straits Times,"Million-dollar HDB flats: Half of S'pore's 24 towns have them, including Hougang, Geylang and Ang Mo Kio",explainer,FALSE,FALSE,Factiva STIMES0020210613eh6e0049g,FALSE,Factiva ST
+2021-06-22,The Straits Times,49-year-old HDB terrace house in Whampoa sold for record $1.268 million,record,FALSE,FALSE,Factiva STIMES0020210622eh6m002s4,FALSE,Factiva ST
+2021-06-23,Mothership,49-year-old Whampoa HDB terraced house sold for record S$1.268 million,record,FALSE,FALSE,https://mothership.sg/2021/06/whampoa-hdb-terraced-house-sold/,FALSE,Pilot web search
+2021-07-30,The Straits Times,Five-room Bishan HDB flat sold for record $1.295 million,record,FALSE,FALSE,Factiva STIMES0020210730eh7u003ju,FALSE,Factiva ST
+2021-07-31,Mothership,"Bishan HDB flat sells for S$1.295 million, sets new resale record",record,FALSE,FALSE,https://mothership.sg/2021/07/bishan-hdb-new-resale-record/,FALSE,Pilot web search
+2021-07-31,The Straits Times,DBSS flat in Bishan sold for record $1.295m,record,FALSE,FALSE,Factiva STIMES0020210730eh7v006l8,FALSE,Factiva ST
+2021-08-17,Mothership,Toa Payoh 5-room HDB flat sold for S$1.238m,record,FALSE,FALSE,https://mothership.sg/2021/08/toa-payoh-hdb-sold-record/,FALSE,Pilot web search
+2021-09-09,The Straits Times,HDB resale prices rise in August to just 0.1% below peak; record 26 million-dollar flats sold,record,FALSE,FALSE,Factiva STIMES0020210909eh99003xr,FALSE,Factiva ST
+2021-12-01,99.co,Monthly record of 29 million-dollar flats sold in November 2021,record,FALSE,TRUE,https://www.99.co/singapore/insider/million-dollar-flat-monthly-record-nov-2021-hdb-resale/,TRUE,Pilot web search
+2021-12-09,The Straits Times,Record 29 million-dollar HDB flats sold in November; resale prices rise at faster pace,record,FALSE,TRUE,Factiva STIMES0020211209ehc9000p2,FALSE,Factiva ST
+2021-12-10,The Straits Times,HDB resale prices up for 17th straight month,record,FALSE,TRUE,Factiva STIMES0020211209ehca004hg,FALSE,Factiva ST
+2022-01-01,99.co,Monthly record of million-dollar flat transactions broken again in December 2021,record,FALSE,TRUE,https://www.99.co/singapore/insider/monthly-record-million-dollar-flat-transactions-broken-again-december-2021/,TRUE,Pilot web search
+2022-01-06,The Straits Times,Record 261 million-dollar HDB flats in 2021; resale prices rise in December as volume dips,record,FALSE,TRUE,Factiva STIMES0020220106ei16000gq,FALSE,Factiva ST
+2022-01-28,The Straits Times,"HDB resale prices jumped 12.7% in 2021, record 259 million-dollar flats sold",record,FALSE,FALSE,Factiva STIMES0020220128ei1s000p5,FALSE,Factiva ST
+2022-03-10,The Straits Times,"Yishun HDB jumbo flat sold for over $1m, 2nd unit in non-mature estate to cross million-dollar mark",record,FALSE,FALSE,Factiva STIMES0020220310ei3a00337,FALSE,Factiva ST
+2022-04-07,The Straits Times,HDB resale prices rise for 21st straight month; Pinnacle flat sells for record $1.38m,record,FALSE,TRUE,Factiva STIMES0020220407ei470018k,FALSE,Factiva ST
+2022-05-05,The Straits Times,HDB resale prices rise for 22nd straight month; Pinnacle 4-room flat sells for record $1.228m,record,FALSE,TRUE,Factiva STIMES0020220505ei55001xk,FALSE,Factiva ST
+2022-05-20,Mothership,5-room Henderson Road HDB flat with 96 years lease left sold for record S$1.4 million,record,FALSE,FALSE,https://mothership.sg/2022/05/henderson-road-flat-record-price/,FALSE,Pilot web search
+2022-06-09,Mothership,3 executive HDB resale flats in Woodlands & Pasir Ris sold for over S$1 million for first time,record,FALSE,TRUE,https://mothership.sg/2022/06/million-hdb-resale-woodlands-pasir-ris/,FALSE,Pilot web search
+2022-06-09,The Straits Times,"HDB resale prices rise for 23rd straight month; Woodlands, Pasir Ris see first million-dollar flats",record,FALSE,TRUE,Factiva STIMES0020220609ei69000jj,FALSE,Factiva ST
+2022-06-10,The Straits Times,"HDB resale prices up for 23rd month; Woodlands, Pasir Ris flats cross $1m",record,FALSE,TRUE,Factiva STIMES0020220609ei6a00473,FALSE,Factiva ST
+2022-06-21,CNA,Commentary: Are HDB resale flats in non-mature estates still affordable?,affordability,FALSE,TRUE,Factiva CNEWAS0020220620ei6l000ul,FALSE,Factiva CNA
+2022-06-29,Mothership,29th floor Tiong Bahru HDB flat sells for S$1.158 million,record,FALSE,FALSE,https://mothership.sg/2022/06/tiong-bahru-flat-sold/,FALSE,Pilot web search
+2022-07-05,The Straits Times,Five-room Marine Parade flat sold for $1.01m; first million-dollar flat in estate,record,FALSE,FALSE,Factiva STIMES0020220705ei7500338,FALSE,Factiva ST
+2022-07-07,The Straits Times,HDB resale prices rise for 24th straight month in June; ground floor Yishun flat sold for $1m,record,FALSE,TRUE,Factiva STIMES0020220707ei77000m9,FALSE,Factiva ST
+2022-07-08,Mothership,Ground floor Yishun flat sold for S$1 million,record,FALSE,FALSE,https://mothership.sg/2022/07/yishun-flat-ground-floor-1-million/,FALSE,Pilot web search
+2022-07-31,Mothership,"Hougang executive HDB flat sells for S$1.073 million, estate's first million-dollar flat",record,FALSE,FALSE,https://mothership.sg/2022/07/hougang-million-dollar-flat-sold/,FALSE,Pilot web search
+2022-08-01,99.co,First million-dollar flats sold in Bukit Batok and Marine Parade in July 2022,record,FALSE,TRUE,https://www.99.co/singapore/insider/first-million-dollar-flats-sold-bukit-batok-marine-parade-july-2022/,TRUE,Pilot web search
+2022-08-05,Mothership,Executive maisonette in Bukit Batok sold for S$1 million,record,FALSE,FALSE,https://mothership.sg/2022/08/bukit-batok-million-dollar-flat/,FALSE,Pilot web search
+2022-08-17,CNA,"Commentary: Even with million-dollar HDB flats, housing is still affordable for the average person",contextualised,FALSE,TRUE,Factiva CNEWAS0020220816ei8h0012x,FALSE,Factiva CNA
+2022-09-02,EdgeProp,Million-dollar HDB flat transactions to hit new high this year: OrangeTee & Tie,record,FALSE,FALSE,https://www.edgeprop.sg/property-news/million-dollar-hdb-flat-transactions-hit-new-high-year-orangetee-tie,FALSE,Pilot web search
+2022-09-02,Mothership,"Liu Thai Ker on million-dollar HDB flats, 99-year leases & planning for a 10 million population in S'pore",affordability,FALSE,TRUE,https://mothership.sg/2022/09/liu-thai-ker-hdb/,FALSE,Pilot web search
+2022-09-08,The Straits Times,HDB resale prices rise for 26th straight month in August; 33 million-dollar flats sold,market_update,FALSE,TRUE,Factiva STIMES0020220908ei98001uu,FALSE,Factiva ST
+2022-09-09,The Straits Times,HDB resale prices up for 26th month; 33 flats sold for at least $1m,market_update,FALSE,TRUE,Factiva STIMES0020220908ei99003zc,FALSE,Factiva ST
+2022-09-16,Mothership,"Punggol HDB flat sold for S$1.2 million, estate's first million-dollar resale flat",record,FALSE,FALSE,https://mothership.sg/2022/09/punggol-hdb-flat-1-million/,FALSE,Pilot web search
+2022-09-18,Mothership,"Tampines HDB flat sold for S$1.013 million, estate's first million-dollar resale flat",record,FALSE,FALSE,https://mothership.sg/2022/09/tampines-hdb-flat-1-million/,FALSE,Pilot web search
+2022-09-27,Mothership,"Bedok jumbo flat sold for S$1.04 million, estate's first million-dollar resale flat",record,FALSE,FALSE,https://mothership.sg/2022/09/bedok-reservoir-million-dollar-flat/,FALSE,Pilot web search
+2022-10-01,99.co,Record number of million-dollar HDB resale flats sold in September 2022,record,FALSE,TRUE,https://www.99.co/singapore/insider/record-number-million-dollar-hdb-resale-flats-sold-september-2022/,TRUE,Pilot web search
+2022-10-04,Mothership,Desmond Lee explains steps taken by govt to moderate demand & increase supply of homes to stabilise prices,policy,FALSE,TRUE,https://mothership.sg/2022/10/desmond-lee-hdb-flat-prices/,FALSE,Pilot web search
+2022-10-06,The Straits Times,HDB resale prices climb 1.2% in Sept; record 45 million-dollar flats sold in a month,record,FALSE,TRUE,Factiva STIMES0020221006eia6000rx,FALSE,Factiva ST
+2022-10-07,The Straits Times,HDB resale prices up again as record 45 units cross $1m,record,FALSE,TRUE,Factiva STIMES0020221006eia7003w3,FALSE,Factiva ST
+2022-10-08,Mothership,Who are the S'poreans buying S$1 million HDB flats & why?,explainer,FALSE,FALSE,https://mothership.sg/2022/10/million-hdb-flat-buyers/,FALSE,Pilot web search
+2022-10-20,EdgeProp,High floor and proximity to MRT station rank as top attributes of million-dollar HDB flats: PropNex,explainer,FALSE,FALSE,https://www.edgeprop.sg/property-news/high-floor-and-proximity-mrt-station-rank-top-attributes-million-dollar-hdb-flats-propnex,FALSE,Pilot web search
+2022-10-28,CNA,HDB resale flat prices propped up by 'unrelenting interest' in million-dollar deals: Analysts,market_update,FALSE,FALSE,Factiva CNEWAS0020221028eias0008d,FALSE,Factiva CNA
+2022-11-18,The Straits Times,Some HDB resale flats shouldn’t cost $1m,contextualised,FALSE,FALSE,Factiva STIMES0020221118eibi000p7,FALSE,Factiva ST
+2022-12-07,CNA,Snap Insight: Not fair to compare prices of HDB flats today with those built decades ago,affordability,FALSE,FALSE,Factiva CNEWAS0020221207eic7000rt,FALSE,Factiva CNA
+2022-12-08,The Straits Times,"HDB resale flat prices rise for 29th straight month in Nov, fewer million-dollar flats sold",market_update,FALSE,TRUE,Factiva STIMES0020221208eic8000ha,FALSE,Factiva ST
+2023-02-14,CNA,"Snap Insight: Bigger grants for first-time resale HDB buyers provide relief, but may have knock-on impact on prices",affordability,FALSE,FALSE,Factiva CNEWAS0020230214ej2e000m9,FALSE,Factiva CNA
+2023-03-14,EdgeProp,OPINION: More $1 million HDB flats is not necessarily a cause for alarm,contextualised,FALSE,TRUE,https://www.edgeprop.sg/property-news/opinion-more-1-million-hdb-flats-not-necessarily-cause-alarm,FALSE,Pilot web search
+2023-03-23,CNA,"Commentary: As some HDB flat owners test appetite beyond million-dollar price tags, how much higher can the resale market go?",affordability,FALSE,FALSE,Factiva CNEWAS0020230322ej3n000xd,FALSE,Factiva CNA
+2023-04-06,The Straits Times,Big jump in HDB resale flats that sold for $800k to $999k during the pandemic,explainer,FALSE,FALSE,Factiva STIMES0020230405ej46004ej,FALSE,Factiva ST
+2023-07-04,Mothership,"2012 Toa Payoh HDB flat sold for record S$1.42 million, most expensive 5-room resale flat",record,FALSE,FALSE,https://mothership.sg/2023/07/toapayoh-hdb-record-sale-2023/,FALSE,Pilot web search
+2023-07-06,The Straits Times,"HDB resale prices up 0.6% in June, volume down; record $1.5 million flat sold in Tiong Bahru",record,FALSE,TRUE,Factiva STIMES0020230706ej76001gt,FALSE,Factiva ST
+2023-08-20,CNA,"Resale restrictions for Plus, Prime flats may slow growing number of million-dollar HDB deals: Analyst",policy,FALSE,FALSE,Factiva CNEWAS0020230820ej8k000p1,FALSE,Factiva CNA
+2023-09-05,Mothership,"4-room Telok Blangah flat sold for S$1.1 million, area's first million-dollar HDB unit",record,FALSE,FALSE,https://mothership.sg/2023/09/telok-blangah-hdb-million/,FALSE,Pilot web search
+2023-09-08,The Straits Times,HDB resale prices up 0.6% in Aug; record 54 million-dollar flats,record,FALSE,TRUE,Factiva STIMES0020230907ej98004ev,FALSE,Factiva ST
+2023-10-11,Mothership,Upper Boon Keng 4-room HDB resale flat sold for more than S$1.3 million,record,FALSE,FALSE,https://mothership.sg/2023/10/upper-boon-keng-resale-flat-million-dollars/,FALSE,Pilot web search
+2023-10-13,EdgeProp,"HDB resale price growth slows, even as number of million-dollar transactions hit record high",record,FALSE,FALSE,https://www.edgeprop.sg/property-news/hdb-resale-price-growth-slows-even-number-million-dollar-transactions-hit-record-high,FALSE,Pilot web search
+2023-11-09,The Straits Times,"HDB resale prices, volume rebound in October; million-dollar flats in 2023 total 377",market_update,FALSE,FALSE,Factiva STIMES0020231109ejb9001gt,FALSE,Factiva ST
+2023-12-20,EdgeProp,Million-dollar HDB flats reach record highs in 2023 despite inflationary pressures and policy changes,record,FALSE,FALSE,https://www.edgeprop.sg/property-news/million-dollar-hdb-flats-reach-record-highs-2023-despite-inflationary-pressures-and-policy-change,FALSE,Pilot web search
+2024-02-01,99.co,"74 HDB units sold in January 2024 for over a million dollars, breaking records",record,FALSE,TRUE,https://www.99.co/singapore/insider/74-hdb-units-million-dollars-breaking-records/,TRUE,Pilot web search
+2024-02-06,The Straits Times,HDB resale prices rise 1.5% in January; record 74 units sold for at least $1 million each,record,FALSE,TRUE,Factiva STIMES0020240206ek260015q,FALSE,Factiva ST
+2024-03-08,Mothership,Ang Mo Kio St 52 5-room HDB flat sold for record-breaking S$1.268 million,record,FALSE,TRUE,https://mothership.sg/2024/03/amk-hbd-sold-for-1268-million/,FALSE,Pilot web search
+2024-04-08,The Straits Times,"HDB resale prices rise 0.3% in March, fewer units sold",market_update,FALSE,FALSE,Factiva STIMES0020240408ek48001b9,FALSE,Factiva ST
+2024-04-17,Mothership,Queenstown 4-room flat sold for record-breaking S$1.238 million,record,FALSE,TRUE,https://mothership.sg/2024/04/queenstown-4-room-flat-s1-238-million/,FALSE,Pilot web search
+2024-05-01,Mothership,Tiong Bahru 5-room flat sells for record S$1.588 million,record,FALSE,TRUE,https://mothership.sg/2024/05/bukit-merah-5-room-flat-most-expensive-april-2024/,FALSE,Pilot web search
+2024-05-02,Mothership,Sengkang resale HDB maisonette sold for S$1 million,record,FALSE,TRUE,https://mothership.sg/2024/05/sengkang-maisonette-1-million/,FALSE,Pilot web search
+2024-06-08,Mothership,"5-room flat in Bukit Merah sold for S$1.588 million, joint-most expensive resale HDB in S'pore",record,FALSE,TRUE,https://mothership.sg/2024/06/bukit-merah-resale-hdb-joint-most-expensive/,FALSE,Pilot web search
+2024-07-01,99.co,Record-breaking 96 HDB resale flats sold for over S$1 million in June,record,FALSE,TRUE,https://www.99.co/singapore/insider/million-dollar-flats-ath-june-2024/,TRUE,Pilot web search
+2024-07-08,The Straits Times,"Number of million-dollar HDB flats resold hit all-time high in June; prices up 1.8%: SRX, 99.co",record,FALSE,TRUE,Factiva STIMES0020240708ek780025u,FALSE,Factiva ST
+2024-07-23,Mothership,5-room resale HDB flat at Margaret Drive sells for record S$1.73 million,record,FALSE,TRUE,https://mothership.sg/2024/07/skyoasis-dawson-sold-record-most-expensive-hdb-flat/,FALSE,Pilot web search
+2024-07-26,Mothership,"Another Sengkang flat sells for S$1 million, while Punggol flat sells for all-time high of S$1.228 million",record,FALSE,TRUE,https://mothership.sg/2024/07/sengkang-punggol-flats-sell-1-million/,FALSE,Pilot web search
+2024-08-01,99.co,Million-dollar HDB Resale transactions hit ATH again in July 2024; Highest volume since 2010,record,FALSE,TRUE,https://www.99.co/singapore/insider/million-dollar-flat-transaction-ath-july-2024/,TRUE,Pilot web search
+2024-08-06,The Straits Times,Spike in million-dollar deals and strong volume nudge HDB resale prices up further in July,record,FALSE,TRUE,Factiva STIMES0020240806ek8600234,FALSE,Factiva ST
+2024-08-29,The Straits Times,Those million-dollar flats are outliers. Housing remains largely affordable,contextualised,TRUE,TRUE,Factiva STIMES0020240829ek8t00007,FALSE,Factiva ST
+2024-09-04,The Straits Times,"HDB mature estate prices dip in August, million-dollar deals slide amid Ghost Month lull: SRX, 99.co",market_update,FALSE,TRUE,Factiva STIMES0020240904ek94003mq,FALSE,Factiva ST
+2024-09-06,Mothership,30-year-old Bendemeer Road HDB executive flat sold for record S$1.318 million,record,FALSE,TRUE,https://mothership.sg/2024/09/bendemeer-hdb-executive-flat-record-million/,FALSE,Pilot web search
+2024-10-05,Mothership,4 Bidadari flats sold above S$1 million within 2 months after MOP,record,FALSE,TRUE,https://mothership.sg/2024/10/bidadari-alkaff-vista-million-dollar-flats/,FALSE,Pilot web search
+2024-11-07,CNA,Commentary: Why is there so much angst over million-dollar HDB flats?,explainer,FALSE,TRUE,Factiva CNEWAS0020241107ekb70002t,FALSE,Factiva CNA
+2024-12-04,EdgeProp,ANALYSIS: HDB towns with the highest number of million-dollar deals,explainer,FALSE,FALSE,https://www.edgeprop.sg/property-news/analysis-hdb-towns-highest-number-million-dollar-deals,FALSE,Pilot web search
+2024-12-23,EdgeProp,"Record-breaking 1,000 HDB resale flats hit $1 mil in 2024",record,FALSE,TRUE,https://www.edgeprop.sg/property-news/record-breaking-1000-hdb-resale-flats-hit-1-mil-2024,FALSE,Pilot web search
+2024-12-23,Mothership,Punggol waterfront 5-room HDB flats sell for close to S$1 million after MOP,record,FALSE,TRUE,https://mothership.sg/2024/12/punggol-waterfront-flats-sold-nearly-1-million/,FALSE,Pilot web search
+2024-12-25,The Straits Times,Seller beware: That million-dollar dream for your HDB flat may cost you,explainer,FALSE,TRUE,Factiva STIMES0020241225ekcp00009,FALSE,Factiva ST
+2025-01-10,Mothership,13-year-old Toa Payoh DBSS flat sold for record S$1.6 million,record,FALSE,TRUE,https://mothership.sg/2025/01/million-toa-payoh-dbss-flat/,FALSE,Pilot web search
+2025-03-13,Mothership,"Bidadari flat sells for S$1,258,888 after MOP, most expensive 4-room resale in Toa Payoh",record,FALSE,TRUE,https://mothership.sg/2025/03/bidadari-sale-mop-record/,FALSE,Pilot web search
+2025-03-29,CNA,From million-dollar flats to 99-year leases: PM Lawrence Wong answers questions on Singapore housing,policy,FALSE,TRUE,Factiva CNEWAS0020250329el3t00001,FALSE,Factiva CNA
+2025-04-25,EdgeProp,HDB resale price growth slows to 1.6% in 1Q2025 despite record number of million-dollar flats,record,FALSE,TRUE,https://www.edgeprop.sg/property-news/hdb-resale-price-growth-slows-16-1q2025-despite-record-number-million-dollar-flats,FALSE,Pilot web search
+2025-04-30,Mothership,10-year-old Sengkang flat sold for S$1.06 million,record,FALSE,TRUE,https://mothership.sg/2025/04/sengkang-hdb-flat-sold-over-million/,FALSE,Pilot web search
+2025-05-01,99.co,All-time-high of 141 million-dollar flats sold in April 2025 as HDB resale prices & volume continue to rise,record,FALSE,TRUE,https://www.99.co/singapore/insider/hdb-resale-april-2025/,TRUE,Pilot web search
+2025-05-07,Mothership,"141 HDB flats sold in April 2025 for S$1 million or more, highest in past year",record,FALSE,TRUE,https://mothership.sg/2025/05/million-dollar-flats-april-2025/,FALSE,Pilot web search
+2025-05-28,EdgeProp,Million-dollar sales of 4-room HDBs surpass 5-rooms,explainer,FALSE,FALSE,https://www.edgeprop.sg/property-news/million-dollar-sales-4-room-hdbs-surpass-5-rooms,FALSE,Pilot web search
+2025-07-01,Mothership,Pinnacle@Duxton 5-room HDB flat sold for record S$1.58 million,record,FALSE,TRUE,https://mothership.sg/2025/07/five-room-pinnacle-duxton-flat-record-transaction-price/,FALSE,Pilot web search
+2025-07-21,Mothership,4-room Clementi flat sold for record S$1.28 million,record,FALSE,TRUE,https://mothership.sg/2025/07/4-room-clementi-crest-flat-record/,FALSE,Pilot web search
+2025-09-02,Mothership,5-room Boon Keng HDB resale flat sold for record S$1.54 million,record,FALSE,FALSE,https://mothership.sg/2025/09/five-room-boon-keng-sold-record/,FALSE,Pilot web search
+2025-09-17,Mothership,5-room Tampines Central HDB resale flat sold at record high of nearly S$1.07 million,record,FALSE,FALSE,https://mothership.sg/2025/09/five-room-tampines-record-high/,FALSE,Pilot web search
+2025-11-14,Mothership,4-room Bishan HDB resale flat sold for record S$1.25 million,record,FALSE,FALSE,https://mothership.sg/2025/11/resale-bishan-hdb-record-high/,FALSE,Pilot web search
+2025-12-22,EdgeProp,"Over 1,500 million-dollar HDB resale flats sold in 2025",record,FALSE,TRUE,https://www.edgeprop.sg/property-news/over-1500-million-dollar-hdb-resale-flats-sold-2025,FALSE,Pilot web search
